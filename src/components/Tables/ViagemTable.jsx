@@ -1,55 +1,68 @@
-const statusLabels = {
-  in_transit: "Em trânsito",
-  scheduled: "Programada",
-  completed: "Concluída",
-};
+import Button from "../UI/Button";
 
-export default function ViagemTable({ trips = [] }) {
+function formatWeight(value) {
+  return Number.isFinite(value) ? `${value} kg` : "—";
+}
+
+export default function ViagemCargasTable({
+  loads = [],
+  selectedLoadId,
+  onOpenLoad,
+}) {
   return (
     <div
-      className="viagem-table__scroll"
+      className="carga-table__scroll"
       role="region"
-      aria-label="Lista de viagens"
+      aria-label="Cargas da viagem"
       tabIndex={0}
     >
-      <table className="viagem-table">
-        <caption className="viagem-table__caption">
-          Viagens e informações de transporte
+      <table className="carga-table">
+        <caption className="carga-table__caption">
+          Cargas vinculadas à viagem
         </caption>
 
         <thead>
           <tr>
-            <th scope="col">Viagem</th>
-            <th scope="col">Produto</th>
-            <th scope="col">Origem</th>
-            <th scope="col">Destino</th>
-            <th scope="col">Veículo</th>
-            <th scope="col">Situação</th>
+            <th scope="col">Carga</th>
+            <th scope="col">Variedade</th>
+            <th scope="col">Lote de colheita</th>
+            <th scope="col">Caixas</th>
+            <th scope="col">Peso líquido</th>
+            <th scope="col">Ação</th>
           </tr>
         </thead>
 
         <tbody>
-          {trips.map((trip) => (
-            <tr key={trip.id}>
-              <th scope="row">{trip.code || trip.id}</th>
-              <td>{trip.product || "—"}</td>
-              <td>{trip.origin || "—"}</td>
-              <td>{trip.destination || "—"}</td>
-              <td>{trip.vehicle || "—"}</td>
+          {loads.map((load) => {
+            const isSelected =
+              selectedLoadId !== undefined &&
+              String(load.id) === String(selectedLoadId);
 
-              <td>
-                <span
-                  className={`viagem-table__status viagem-table__status--${
-                    statusLabels[trip.status]
-                      ? trip.status
-                      : "unknown"
-                  }`}
-                >
-                  {statusLabels[trip.status] || "Não informado"}
-                </span>
-              </td>
-            </tr>
-          ))}
+            return (
+              <tr
+                key={load.id}
+                className={
+                  isSelected ? "carga-table__row--selected" : undefined
+                }
+              >
+                <th scope="row">{load.code || load.id}</th>
+                <td>{load.variety || "—"}</td>
+                <td>{load.harvestLot || "—"}</td>
+                <td>{load.boxes ?? "—"}</td>
+                <td>{formatWeight(load.netWeightKg)}</td>
+                <td>
+                  <Button
+                    variant={isSelected ? "primary" : "secondary"}
+                    className="carga-table__action"
+                    aria-pressed={isSelected}
+                    onClick={() => onOpenLoad?.(load)}
+                  >
+                    {isSelected ? "Carga aberta" : "Abrir carga"}
+                  </Button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

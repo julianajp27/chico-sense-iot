@@ -1,18 +1,18 @@
-import { useEffect, useState } from "react";
 
-import { listarViagens } from "../../services/viagemService";
-import { adaptViagensResponse } from "./viagemAdapter";
+import { useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
+import ViagemDetalhes from "../../components/Cards/ViagemDetalhes";
 import ViagemTable from "../../components/Tables/ViagemTable";
-import Button from "../../components/UI/Button";
+import NovaViagemForm from "../../components/Forms/NovaViagemForm";
+
 import Card from "../../components/UI/Card";
-import Input from "../../components/UI/Input";
 import EmptyState from "../../components/UI/EmptyState";
 import ErrorState from "../../components/UI/ErrorState";
+import Input from "../../components/UI/Input";
 import LoadingState from "../../components/UI/LoadingState";
 
-const categories = [
-  { value: "all", label: "Todas" },
+const tabs = [
   { value: "in_transit", label: "Em trânsito" },
   { value: "scheduled", label: "Programadas" },
   { value: "completed", label: "Concluídas" },
@@ -26,87 +26,94 @@ function normalizeSearch(value) {
     .trim();
 }
 
-export default function Viagens() {
-  const [trips, setTrips] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [category, setCategory] = useState("all");
+export default function Viagens({
+  trips = [],
+  loading = false,
+  error,
+  onRetry,
+}) {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const detailsRef = useRef(null);
+
+  const initialTripId = location.state?.tripId ?? null;
+
+  const [tab, setTab] = useState(
+    () =>
+      trips.find((trip) => trip.id === initialTripId)?.status ??
+      "in_transit"
+  );
+
   const [search, setSearch] = useState("");
-  const [requestVersion, setRequestVersion] = useState(0);
+  const [selectedTripId, setSelectedTripId] = useState(initialTripId);
 
-  function refresh() {
-    setRequestVersion((current) => current + 1);
-  }
+  // Controle do formulário de cadastro
+  const [showNewTrip, setShowNewTrip] = useState(false);
 
-  useEffect(() => {
-    let active = true;
+  // Mensagem após cadastrar uma viagem
+  const [successMessage, setSuccessMessage] = useState("");
 
-    async function loadTrips() {
-      setLoading(true);
-      setError("");
+  const query = normalizeSearch(search);
 
-      try {
-        const response = await listarViagens();
-        const data = adaptViagensResponse(response);
+  const tabTrips = trips.filter((trip) => trip.status === tab);
 
-        if (active) {
-          setTrips(data);
-        }
-      } catch (requestError) {
-        if (!active) return;
-
-        const status = requestError.response?.status;
-
-        if (status === 404) {
-          setError(
-            "A consulta de viagens ainda não está disponível na API."
-          );
-        } else if (status === 401 || status === 403) {
-          setError(
-            "Seu acesso à consulta não foi autorizado. Verifique sua sessão."
-          );
-        } else {
-          setError(
-            "Não foi possível carregar as viagens. A resposta pode estar indisponível ou em um formato ainda não suportado."
-          );
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadTrips();
-
-    return () => {
-      active = false;
-    };
-  }, [requestVersion]);
-
-  const normalizedSearch = normalizeSearch(search);
-
-  const filteredTrips = trips.filter((trip) => {
-    const matchesCategory =
-      category === "all" || trip.status === category;
-
-    const matchesSearch = [
+  const filteredTrips = tabTrips.filter((trip) =>
+    [
       trip.code,
-      trip.product,
       trip.origin,
       trip.destination,
       trip.vehicle,
-    ].some((value) =>
-      normalizeSearch(value).includes(normalizedSearch)
+      trip.driver,
+    ].some((value) => normalizeSearch(value).includes(query))
+  );
+
+  const selectedTrip = filteredTrips.find(
+    (trip) => trip.id === selectedTripId
+  );
+
+  useEffect(() => {
+    if (!selectedTrip || !detailsRef.current) return;
+
+    const reduceMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    ).matches;
+
+    detailsRef.current.scrollIntoView({
+      behavior: reduceMotion ? "auto" : "smooth",
+      block: "start",
+    });
+  }, [selectedTripId, selectedTrip]);
+
+  function handleOpenTrip(trip) {
+    setSelectedTripId((current) =>
+      current === trip.id ? null : trip.id
     );
-
-    return matchesCategory && matchesSearch;
-  });
-
-  function clearFilters() {
-    setCategory("all");
-    setSearch("");
   }
+
+  function handleOpenNewTrip() {
+    setSuccessMessage("");
+    setShowNewTrip(true);
+  }
+
+  function handleCloseNewTrip() {
+    setShowNewTrip(false);
+  }
+
+  async function handleTripCreated() {
+    // Atualiza a lista centralizada no AppRoutes
+    if (typeof onRetry === "function") {
+      await onRetry();
+    }
+
+    // Exibe a aba onde a nova viagem deve aparecer
+    setTab("scheduled");
+    setSearch("");
+    setSelectedTripId(null);
+
+    setSuccessMessage("Viagem cadastrada com sucesso!");
+  }
+
+  const controlsDisabled = loading || Boolean(error);
 
   return (
     <div className="viagens-page">
@@ -119,33 +126,56 @@ export default function Viagens() {
           <h1 className="page-title">Viagens</h1>
 
           <p className="viagens-page__description">
-            Acompanhe viagens e informações de transporte.
+            Consulte as viagens e as cargas vinculadas a cada uma.
           </p>
         </div>
 
-        <Button
-          variant="secondary"
-          onClick={refresh}
-          disabled={loading}
+        <button
+          type="button"
+          className="viagens-page__new-button"
+          onClick={handleOpenNewTrip}
         >
-          Atualizar
-        </Button>
+          + Nova viagem
+        </button>
       </div>
 
-      <Card>
+      {successMessage && (
+        <div
+          role="status"
+          style={{
+            padding: "12px 16px",
+            marginBottom: 16,
+            borderRadius: 10,
+            border: "1px solid #3b8060",
+            background: "rgba(30, 120, 70, 0.12)",
+            color: "#78d9a3",
+          }}
+        >
+          {successMessage}
+        </div>
+      )}
+
+      <Card
+        title="Viagens"
+        description="Selecione uma viagem para ver seus detalhes e cargas."
+      >
         <div className="viagens-page__toolbar">
           <div
             className="viagens-page__categories"
             role="group"
-            aria-label="Filtrar por situação da viagem"
+            aria-label="Filtrar viagens por situação"
           >
-            {categories.map((item) => (
+            {tabs.map((item) => (
               <button
                 key={item.value}
                 type="button"
                 className="viagens-page__category"
-                aria-pressed={category === item.value}
-                onClick={() => setCategory(item.value)}
+                aria-pressed={tab === item.value}
+                disabled={controlsDisabled}
+                onClick={() => {
+                  setTab(item.value);
+                  setSelectedTripId(null);
+                }}
               >
                 {item.label}
               </button>
@@ -157,9 +187,10 @@ export default function Viagens() {
               label="Buscar viagens"
               name="tripSearch"
               type="search"
-              placeholder="Código, produto, rota ou veículo"
+              placeholder="Código, rota, veículo ou motorista"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              disabled={controlsDisabled}
             />
           </div>
         </div>
@@ -167,32 +198,66 @@ export default function Viagens() {
         {loading ? (
           <LoadingState message="Carregando viagens…" />
         ) : error ? (
-          <ErrorState message={error} onRetry={refresh} />
+          <ErrorState message={error} onRetry={onRetry} />
         ) : trips.length === 0 ? (
           <EmptyState
             title="Nenhuma viagem cadastrada"
-            description="As viagens aparecerão aqui quando estiverem disponíveis."
+            description="As viagens aparecerão aqui assim que forem cadastradas."
+          />
+        ) : tabTrips.length === 0 ? (
+          <EmptyState
+            title="Nenhuma viagem nesta situação"
+            description="Selecione outra aba para consultar as demais viagens."
           />
         ) : filteredTrips.length === 0 ? (
           <EmptyState
             title="Nenhuma viagem encontrada"
-            description="Altere a busca ou a situação selecionada."
-            action={
-              <Button variant="secondary" onClick={clearFilters}>
-                Limpar filtros
-              </Button>
-            }
+            description="Altere o texto da busca para consultar outros resultados."
           />
         ) : (
           <>
-            <p className="viagens-page__results" role="status">
-              {filteredTrips.length} de {trips.length} viagens recebidas
+            <p
+              className="viagens-page__results"
+              role="status"
+            >
+              {filteredTrips.length} de {tabTrips.length} viagens
             </p>
 
-            <ViagemTable trips={filteredTrips} />
+            <ViagemTable
+              trips={filteredTrips}
+              selectedTripId={selectedTripId}
+              onOpenTrip={handleOpenTrip}
+            />
           </>
         )}
       </Card>
+
+      {selectedTrip && (
+        <div
+          ref={detailsRef}
+          className="viagens-page__details"
+        >
+          <ViagemDetalhes
+            trip={selectedTrip}
+            onOpenLoad={(load) =>
+              navigate("/cargas", {
+                state: {
+                  tripId: selectedTrip.id,
+                  loadId: load.id,
+                },
+              })
+            }
+          />
+        </div>
+      )}
+
+      {/* Modal de cadastro de viagem */}
+      {showNewTrip && (
+        <NovaViagemForm
+          onClose={handleCloseNewTrip}
+          onCreated={handleTripCreated}
+        />
+      )}
     </div>
   );
 }

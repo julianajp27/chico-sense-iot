@@ -42,6 +42,7 @@ export default function Sidebar({
   user,
   alertCount = 0,
   systemOnline = false,
+  systemChecking = false,
   lastReading,
   isOpen = false,
   onClose,
@@ -129,19 +130,23 @@ export default function Sidebar({
             <div className="sidebar__system-heading">
               <span
                 className={`sidebar__system-dot ${
-                  systemOnline ? "sidebar__system-dot--online" : ""
+                  systemOnline && !systemChecking
+                    ? "sidebar__system-dot--online"
+                    : ""
                 }`}
                 aria-hidden="true"
               />
 
-              <span>
-                {systemOnline
-                  ? "Sistema operacional"
-                  : "Sistema sem conexão"}
+              <span role="status">
+                {systemChecking
+                  ? "Verificando conexão…"
+                  : systemOnline
+                    ? "Sistema operacional"
+                    : "Sistema sem conexão"}
               </span>
             </div>
 
-            {lastReading && (
+            {lastReading && !systemChecking && (
               <p className="sidebar__last-reading">
                 {lastReading}
               </p>

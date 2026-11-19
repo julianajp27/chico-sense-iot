@@ -27,6 +27,8 @@ export default function ClimateChart({
   loading = false,
   error,
   onRetry,
+  title = "Monitoramento IoT — ThingSpeak",
+  description = "Histórico de temperatura e umidade coletadas pelo protótipo.",
 }) {
   const validReadings = readings
     .filter(
@@ -48,8 +50,8 @@ export default function ClimateChart({
 
   return (
     <Card
-      title="Monitoramento IoT — ThingSpeak"
-      description="Histórico de temperatura e umidade coletadas pelo protótipo."
+      title={title}
+      description={description}
     >
       {loading ? (
         <LoadingState message="Carregando dados dos sensores…" />
