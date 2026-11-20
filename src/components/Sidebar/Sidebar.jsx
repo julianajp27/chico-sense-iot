@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 import {
   Bell,
@@ -9,6 +10,7 @@ import {
   Settings,
   Sparkles,
   Activity,
+  FlaskConical,
   X,
 } from "lucide-react";
 
@@ -19,6 +21,7 @@ const menuItems = [
   { to: "/viagens", label: "Viagens", icon: Route },
   { to: "/cargas", label: "Cargas", icon: Boxes },
   { to: "/monitoramento", label: "Monitoramento", icon: Activity },
+  { to: "/etileno", label: "Análises de Etileno", icon: FlaskConical },
   { to: "/alertas", label: "Alertas", icon: Bell },
   { to: "/chicosense-ia", label: "ChicoSense IA", icon: Sparkles },
   { to: "/historico", label: "Histórico", icon: History },

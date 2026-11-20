@@ -8,6 +8,7 @@ import Dashboard from "../pages/Dashboard/Dashboard";
 import Viagens from "../pages/Viagens/Viagens";
 import Cargas from "../pages/Cargas/Cargas";
 import Monitoramento from "../pages/Monitoramento/Monitoramento";
+import Etileno from "../pages/Etileno/Etileno";
 import Alertas from "../pages/Alertas/Alertas";
 import Historico from "../pages/Historico/Historico";
 import ChicoSenseIA from "../pages/ChicoSenseIA/ChicoSenseIA";
@@ -24,8 +25,7 @@ function InitialPage({ title }) {
 
       <Card>
         <p className="page-placeholder">
-          O conteúdo desta página será implementado
-          nas próximas etapas.
+          O conteúdo desta página será implementado nas próximas etapas.
         </p>
       </Card>
     </div>
@@ -33,16 +33,22 @@ function InitialPage({ title }) {
 }
 
 function getErrorMessage(error) {
-  if (error.response?.status === 401) {
+  if (error?.response?.status === 401) {
     return "Sua sessão expirou. Faça login novamente.";
   }
 
-  if (error.response?.status === 403) {
-    return "Você não tem permissão para consultar as viagens.";
+  if (error?.response?.status === 403) {
+    return "Você não possui permissão para consultar as viagens.";
+  }
+
+  const detail = error?.response?.data?.detail;
+
+  if (typeof detail === "string") {
+    return detail;
   }
 
   return (
-    error.response?.data?.message ||
+    error?.message ||
     "Não foi possível carregar as viagens."
   );
 }
@@ -58,10 +64,13 @@ export default function AppRoutes({ user, profile }) {
 
     try {
       const data = await listarViagens();
-      setTrips(data);
+
+      setTrips(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Erro ao carregar viagens:", err);
+
       setError(getErrorMessage(err));
+      setTrips([]);
     } finally {
       setLoading(false);
     }
@@ -73,11 +82,13 @@ export default function AppRoutes({ user, profile }) {
 
   return (
     <Routes>
+      {/* Rota inicial */}
       <Route
         path="/"
         element={<Navigate to="/dashboard" replace />}
       />
 
+      {/* Dashboard */}
       <Route
         path="/dashboard"
         element={
@@ -92,6 +103,7 @@ export default function AppRoutes({ user, profile }) {
         }
       />
 
+      {/* Viagens */}
       <Route
         path="/viagens"
         element={
@@ -104,6 +116,7 @@ export default function AppRoutes({ user, profile }) {
         }
       />
 
+      {/* Cargas */}
       <Route
         path="/cargas"
         element={
@@ -116,6 +129,7 @@ export default function AppRoutes({ user, profile }) {
         }
       />
 
+      {/* Monitoramento ambiental */}
       <Route
         path="/monitoramento"
         element={
@@ -128,31 +142,66 @@ export default function AppRoutes({ user, profile }) {
         }
       />
 
+      {/* Análises de Etileno */}
       <Route
-        path="/alertas"
-        element={<Alertas />}
-      />
-
-      <Route
-        path="/historico"
-        element={<Historico />}
-      />
-
-      <Route
-        path="/chicosense-ia"
-        element={<ChicoSenseIA />}
-      />
-
-      <Route
-        path="/configuracoes"
+        path="/etileno"
         element={
-          <Configuracoes
-            user={user}
-            profile={profile}
+          <Etileno
+            trips={trips}
           />
         }
       />
 
+      {/* Central de Alertas */}
+      <Route
+        path="/alertas"
+        element={
+          <Alertas
+            trips={trips}
+            tripsLoading={loading}
+            tripsError={error}
+            onRetryTrips={reload}
+          />
+        }
+      />
+
+      <Route
+  path="/historico"
+  element={
+    <Historico
+      trips={trips}
+      loading={loading}
+      error={error}
+      onRetry={reload}
+    />
+  }
+/>
+
+      <Route
+  path="/chicosense-ia"
+  element={
+    <ChicoSenseIA
+      trips={trips}
+      tripsLoading={loading}
+      tripsError={error}
+      onRetryTrips={reload}
+    />
+  }
+/>
+
+      {/* Configurações */}
+      <Route
+  path="/configuracoes"
+  element={
+    <Configuracoes
+      user={user}
+      profile={profile}
+      trips={trips}
+    />
+  }
+/>
+
+      {/* Páginas futuras */}
       {pages.map(({ path, title }) => (
         <Route
           key={path}
@@ -161,6 +210,7 @@ export default function AppRoutes({ user, profile }) {
         />
       ))}
 
+      {/* Página não encontrada */}
       <Route
         path="*"
         element={

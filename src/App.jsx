@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   Navigate,
@@ -11,13 +12,57 @@ import Header from "./components/Header/Header";
 import Sidebar from "./components/Sidebar/Sidebar";
 import useSystemStatus from "./hooks/useSystemStatus";
 import Login from "./pages/Login/Login";
-import SelecaoPerfil from "./pages/SelecaoPerfil/SelecaoPerfil";
 import AppRoutes from "./routes/AppRoutes";
 
 const validProfiles = ["produtor", "logistica", "cliente"];
 
+function normalizeProfile(value) {
+  const normalized = String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
+  const aliases = {
+    produtor: "produtor",
+    producer: "produtor",
+    logistica: "logistica",
+    logistics: "logistica",
+    cliente: "cliente",
+    client: "cliente",
+    mercado: "cliente",
+  };
+
+  return aliases[normalized] || null;
+}
+
+function getUserProfile(user) {
+  const candidates = [
+    user?.perfil,
+    user?.profile,
+    user?.tipo_usuario,
+    user?.tipo,
+    user?.role,
+    user?.papel,
+  ];
+
+  for (const candidate of candidates) {
+    const value =
+      typeof candidate === "object" && candidate !== null
+        ? candidate.nome ?? candidate.name ?? candidate.codigo
+        : candidate;
+
+    const profile = normalizeProfile(value);
+
+    if (profile && validProfiles.includes(profile)) {
+      return profile;
+    }
+  }
+
+  return null;
+}
+
 export default function App() {
-  // #region Estado da aplicação
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -26,9 +71,7 @@ export default function App() {
   const navigate = useNavigate();
 
   const system = useSystemStatus();
-  // #endregion
 
-  // #region Comportamento do menu
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
@@ -48,41 +91,54 @@ export default function App() {
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isMenuOpen]);
-  // #endregion
 
-  // #region Sessão expirada (a API respondeu 401)
   useEffect(() => {
     function handleSessionExpired() {
+      sessionStorage.removeItem("chicosense_token");
+
       setUser(null);
       setProfile(null);
       setIsMenuOpen(false);
 
-      navigate("/selecionar-perfil", { replace: true });
+      navigate("/login", { replace: true });
     }
 
-    window.addEventListener("auth:expired", handleSessionExpired);
+    window.addEventListener(
+      "auth:expired",
+      handleSessionExpired
+    );
 
     return () => {
-      window.removeEventListener("auth:expired", handleSessionExpired);
+      window.removeEventListener(
+        "auth:expired",
+        handleSessionExpired
+      );
     };
   }, [navigate]);
-  // #endregion
-
-  // #region Fluxo de acesso
-  function handleSelectProfile(selectedProfile) {
-    if (!validProfiles.includes(selectedProfile)) return;
-
-    setProfile(selectedProfile);
-    navigate(user ? "/dashboard" : "/login");
-  }
 
   function handleContinue(loginUser) {
-    setUser(loginUser);
-    navigate("/dashboard", { replace: true });
-  }
+    const authenticatedProfile = getUserProfile(loginUser);
 
-  function handleChangeProfile() {
-    navigate("/selecionar-perfil");
+    if (!authenticatedProfile) {
+      console.error(
+        "O backend não retornou um perfil reconhecido.",
+        loginUser
+      );
+
+      sessionStorage.removeItem("chicosense_token");
+      setUser(null);
+      setProfile(null);
+
+      throw new Error(
+        "Não foi possível identificar seu perfil de acesso. " +
+        "Verifique as informações da conta."
+      );
+    }
+
+    setUser(loginUser);
+    setProfile(authenticatedProfile);
+
+    navigate("/dashboard", { replace: true });
   }
 
   function handleExit() {
@@ -92,60 +148,50 @@ export default function App() {
     setProfile(null);
     setIsMenuOpen(false);
 
-    navigate("/selecionar-perfil", { replace: true });
+    navigate("/login", { replace: true });
   }
 
-  const accessDestination = !profile
-    ? "/selecionar-perfil"
-    : !user
-      ? "/login"
-      : "/dashboard";
-  // #endregion
+  const isAuthenticated = Boolean(user && profile);
 
   return (
     <Routes>
       <Route
         path="/"
-        element={<Navigate to={accessDestination} replace />}
-      />
-
-      {/* #region Seleção inicial */}
-      <Route
-        path="/selecionar-perfil"
         element={
-          <SelecaoPerfil onSelect={handleSelectProfile} />
+          <Navigate
+            to={isAuthenticated ? "/dashboard" : "/login"}
+            replace
+          />
         }
       />
-      {/* #endregion */}
 
-      {/* #region Login */}
+      <Route
+        path="/selecionar-perfil"
+        element={<Navigate to="/login" replace />}
+      />
+
       <Route
         path="/login"
         element={
-          !profile ? (
-            <Navigate to="/selecionar-perfil" replace />
-          ) : user ? (
+          isAuthenticated ? (
             <Navigate to="/dashboard" replace />
           ) : (
-            <Login
-              profile={profile}
-              onContinue={handleContinue}
-              onChangeProfile={handleChangeProfile}
-            />
+            <Login onContinue={handleContinue} />
           )
         }
       />
-      {/* #endregion */}
 
-      {/* #region Layout principal */}
       <Route
         path="/*"
         element={
-          !user || !profile ? (
-            <Navigate to={accessDestination} replace />
+          !isAuthenticated ? (
+            <Navigate to="/login" replace />
           ) : (
             <div className="app-layout">
-              <a className="skip-link" href="#main-content">
+              <a
+                className="skip-link"
+                href="#main-content"
+              >
                 Ir para o conteúdo
               </a>
 
@@ -153,7 +199,9 @@ export default function App() {
                 user={user}
                 alertCount={0}
                 systemOnline={system.status === "online"}
-                systemChecking={system.status === "checking"}
+                systemChecking={
+                  system.status === "checking"
+                }
                 lastReading={system.lastCheck}
                 isOpen={isMenuOpen}
                 onClose={() => setIsMenuOpen(false)}
@@ -164,9 +212,10 @@ export default function App() {
                 <Header
                   user={user}
                   profile={profile}
-                  onProfileChange={handleSelectProfile}
                   alertCount={0}
-                  onNotificationsClick={() => navigate("/alertas")}
+                  onNotificationsClick={() =>
+                    navigate("/alertas")
+                  }
                   onMenuClick={() =>
                     setIsMenuOpen((current) => !current)
                   }
@@ -178,14 +227,16 @@ export default function App() {
                   className="app-layout__content"
                   tabIndex={-1}
                 >
-                  <AppRoutes user={user} profile={profile} />
+                  <AppRoutes
+                    user={user}
+                    profile={profile}
+                  />
                 </main>
               </div>
             </div>
           )
         }
       />
-      {/* #endregion */}
     </Routes>
   );
 }

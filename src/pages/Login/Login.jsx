@@ -1,30 +1,21 @@
+
 import { useState } from "react";
 
 import logo from "../../assets/chicosense-branco-250x80.png";
 import Button from "../../components/UI/Button";
 import Input from "../../components/UI/Input";
+
 import {
   fazerLogin,
   buscarUsuario,
 } from "../../services/authService";
 
-const profileLabels = {
-  produtor: "Produtor",
-  logistica: "Logística",
-  cliente: "Cliente / Mercado",
-};
-
-export default function Login({
-  profile,
-  onContinue,
-  onChangeProfile,
-}) {
+export default function Login({ onContinue }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // #region Autenticação
   async function handleSubmit(event) {
     event.preventDefault();
 
@@ -32,16 +23,25 @@ export default function Login({
 
     setError("");
     setLoading(true);
+
     sessionStorage.removeItem("chicosense_token");
 
     try {
-      const loginData = await fazerLogin(email.trim(), password);
-      const token = loginData.access_token;
+      // 1. Autenticar com e-mail e senha
+      const loginData = await fazerLogin(
+        email.trim(),
+        password
+      );
+
+      const token = loginData?.access_token;
 
       if (typeof token !== "string" || !token.trim()) {
-        throw new Error("Token de acesso ausente na resposta.");
+        throw new Error(
+          "Token de acesso ausente na resposta."
+        );
       }
 
+      // 2. Consultar os dados do usuário autenticado
       const usuario = await buscarUsuario(token);
 
       if (
@@ -49,32 +49,50 @@ export default function Login({
         typeof usuario !== "object" ||
         Array.isArray(usuario)
       ) {
-        throw new Error("Resposta de usuário inválida.");
+        throw new Error(
+          "Resposta de usuário inválida."
+        );
       }
 
-      sessionStorage.setItem("chicosense_token", token);
+      // 3. Armazenar o token da sessão
+      sessionStorage.setItem(
+        "chicosense_token",
+        token
+      );
 
-      onContinue({
+      // 4. Enviar o usuário ao App.jsx
+      // O perfil será identificado automaticamente lá.
+      await onContinue({
         ...usuario,
         name: usuario.name || usuario.nome || "",
         email: usuario.email || email.trim(),
       });
+
     } catch (err) {
       sessionStorage.removeItem("chicosense_token");
 
-      const status = err.response?.status;
+      const status = err?.response?.status;
 
       if (status === 401) {
-        setError("E-mail ou senha incorretos, ou sessão não autorizada.");
+        setError(
+          "E-mail ou senha incorretos, ou sessão não autorizada."
+        );
       } else if (status === 403) {
-        setError("Seu usuário não tem permissão para acessar.");
+        setError(
+          "Seu usuário não tem permissão para acessar."
+        );
       } else if (status === 422) {
-        setError("Verifique os dados informados.");
+        setError(
+          "Verifique os dados informados."
+        );
       } else if (status === 404) {
-        setError("O serviço de autenticação não foi encontrado.");
+        setError(
+          "O serviço de autenticação não foi encontrado."
+        );
       } else {
         setError(
-          "Não foi possível concluir o login. Verifique a conexão ou tente novamente."
+          err?.message ||
+          "Não foi possível concluir o login. Tente novamente."
         );
       }
     } finally {
@@ -82,7 +100,6 @@ export default function Login({
       setLoading(false);
     }
   }
-  // #endregion
 
   return (
     <main className="login-page">
@@ -98,11 +115,14 @@ export default function Login({
         </div>
 
         <div className="login-page__message">
-          <h1>Inteligência para cada etapa da cadeia fria.</h1>
+          <h1>
+            Do campo ao destino, cada detalhe importa.
+          </h1>
 
           <p>
-            Transforme leituras de sensores em visibilidade,
-            alertas e decisões mais seguras para suas cargas.
+            Acompanhe as condições das suas cargas em tempo real, 
+            com monitoramento inteligente para preservar a qualidade 
+            das frutas durante o transporte.
           </p>
 
           <div className="login-page__steps">
@@ -114,8 +134,8 @@ export default function Login({
         </div>
 
         <p className="login-page__footnote">
-          Monitoramento complementar. O ChicoSense não controla
-          a refrigeração do veículo.
+          Monitoramento complementar. O ChicoSense
+          não controla a refrigeração do veículo.
         </p>
       </section>
 
@@ -123,16 +143,21 @@ export default function Login({
         className="login-page__form-area"
         aria-labelledby="login-title"
       >
-        <form className="login-form" onSubmit={handleSubmit}>
+        <form
+          className="login-form"
+          onSubmit={handleSubmit}
+        >
           <span className="access-eyebrow">
             Bem-vindo de volta
           </span>
 
-          <h2 id="login-title">Acesse sua conta</h2>
+          <h2 id="login-title">
+            Acesse sua conta
+          </h2>
 
           <p className="login-form__description">
-            Perfil selecionado:{" "}
-            <strong>{profileLabels[profile] || "Não informado"}</strong>
+            Entre com suas credenciais para
+            acessar o ChicoSense.
           </p>
 
           <Input
@@ -142,7 +167,9 @@ export default function Login({
             placeholder="nome@empresa.com.br"
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
             disabled={loading}
             required
           />
@@ -154,27 +181,28 @@ export default function Login({
             placeholder="Digite sua senha"
             autoComplete="current-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
             disabled={loading}
             required
           />
 
           {error && (
-            <p className="login-form__error" role="alert">
+            <p
+              className="login-form__error"
+              role="alert"
+            >
               {error}
             </p>
           )}
 
-          <Button type="submit" loading={loading}>
-            Entrar
-          </Button>
-
           <Button
-            variant="ghost"
-            onClick={onChangeProfile}
+            type="submit"
+            loading={loading}
             disabled={loading}
           >
-            Alterar perfil
+            Entrar
           </Button>
         </form>
       </section>
