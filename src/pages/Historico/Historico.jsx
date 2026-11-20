@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X } from "lucide-react";
 
-import HistoricoTable from "../../components/Tables/HistoricoTable";
+import HistoricoTable from "../Tables/HistoricoTable";
 import Button from "../../components/UI/Button";
 import Card from "../../components/UI/Card";
 import Input from "../../components/UI/Input";
