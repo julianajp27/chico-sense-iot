@@ -1,8 +1,14 @@
+
 import { useState } from "react";
-import { Activity } from "lucide-react";
+
+import logo from "../../assets/chicosense-branco-250x80.png";
 import Button from "../../components/UI/Button";
 import Input from "../../components/UI/Input";
-import { fazerLogin, buscarUsuario } from "../../services/authService";
+
+import {
+  fazerLogin,
+  buscarUsuario,
+} from "../../services/authService";
 
 export default function Login({ onContinue }) {
   const [email, setEmail] = useState("");
@@ -12,46 +18,85 @@ export default function Login({ onContinue }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (loading) return;
+
     setError("");
     setLoading(true);
 
+    sessionStorage.removeItem("chicosense_token");
+
     try {
-      // Envia e-mail e senha para o backend
-      const loginData = await fazerLogin(email.trim(), password);
+      // 1. Autenticar com e-mail e senha
+      const loginData = await fazerLogin(
+        email.trim(),
+        password
+      );
 
-      // Recupera o token de autenticação
-      const token = loginData.access_token;
+      const token = loginData?.access_token;
 
-      if (!token) {
-        throw new Error("O backend não retornou um token de acesso.");
+      if (typeof token !== "string" || !token.trim()) {
+        throw new Error(
+          "Token de acesso ausente na resposta."
+        );
       }
 
-      // Consulta os dados do usuário autenticado
+      // 2. Consultar os dados do usuário autenticado
       const usuario = await buscarUsuario(token);
 
-      // Guarda o token para as próximas requisições
-      sessionStorage.setItem("chicosense_token", token);
+      if (
+        !usuario ||
+        typeof usuario !== "object" ||
+        Array.isArray(usuario)
+      ) {
+        throw new Error(
+          "Resposta de usuário inválida."
+        );
+      }
 
-      // Continua o fluxo que já existe no App.jsx
-      onContinue({
-        email: email.trim(),
-        usuario,
+      // 3. Armazenar o token da sessão
+      sessionStorage.setItem(
+        "chicosense_token",
+        token
+      );
+
+      // 4. Enviar o usuário ao App.jsx
+      // O perfil será identificado automaticamente lá.
+      await onContinue({
+        ...usuario,
+        name: usuario.name || usuario.nome || "",
+        email: usuario.email || email.trim(),
       });
 
-      setPassword("");
     } catch (err) {
-      console.error("Erro ao fazer login:", err);
+      sessionStorage.removeItem("chicosense_token");
 
-      if (err.response?.status === 401) {
-        setError("E-mail ou senha incorretos.");
-      } else if (err.response?.status === 422) {
-        setError("Verifique os dados informados.");
+      const status = err?.response?.status;
+
+      if (status === 401) {
+        setError(
+          "E-mail ou senha incorretos, ou sessão não autorizada."
+        );
+      } else if (status === 403) {
+        setError(
+          "Seu usuário não tem permissão para acessar."
+        );
+      } else if (status === 422) {
+        setError(
+          "Verifique os dados informados."
+        );
+      } else if (status === 404) {
+        setError(
+          "O serviço de autenticação não foi encontrado."
+        );
       } else {
         setError(
-          "Não foi possível entrar. Verifique a conexão com o servidor."
+          err?.message ||
+          "Não foi possível concluir o login. Tente novamente."
         );
       }
     } finally {
+      setPassword("");
       setLoading(false);
     }
   }
@@ -60,24 +105,24 @@ export default function Login({ onContinue }) {
     <main className="login-page">
       <section className="login-page__presentation">
         <div className="access-brand">
-          <span className="access-brand__icon">
-            <Activity size={24} aria-hidden="true" />
-          </span>
-
-          <div>
-            <strong>ChicoSense</strong>
-            <span className="access-brand__caption">
-              COLD CHAIN INTELLIGENCE
-            </span>
-          </div>
+          <img
+            src={logo}
+            alt="ChicoSense"
+            className="login-page__logo"
+            width={250}
+            height={80}
+          />
         </div>
 
         <div className="login-page__message">
-          <h1>Inteligência para cada etapa da cadeia fria.</h1>
+          <h1>
+            Do campo ao destino, cada detalhe importa.
+          </h1>
 
           <p>
-            Transforme leituras de sensores em visibilidade,
-            alertas e decisões mais seguras para suas cargas.
+            Acompanhe as condições das suas cargas em tempo real, 
+            com monitoramento inteligente para preservar a qualidade 
+            das frutas durante o transporte.
           </p>
 
           <div className="login-page__steps">
@@ -89,8 +134,8 @@ export default function Login({ onContinue }) {
         </div>
 
         <p className="login-page__footnote">
-          Monitoramento complementar. O ChicoSense não controla
-          a refrigeração do veículo.
+          Monitoramento complementar. O ChicoSense
+          não controla a refrigeração do veículo.
         </p>
       </section>
 
@@ -98,15 +143,21 @@ export default function Login({ onContinue }) {
         className="login-page__form-area"
         aria-labelledby="login-title"
       >
-        <form className="login-form" onSubmit={handleSubmit}>
+        <form
+          className="login-form"
+          onSubmit={handleSubmit}
+        >
           <span className="access-eyebrow">
             Bem-vindo de volta
           </span>
 
-          <h2 id="login-title">Acesse sua conta</h2>
+          <h2 id="login-title">
+            Acesse sua conta
+          </h2>
 
           <p className="login-form__description">
-            Acompanhe suas cargas e condições de transporte.
+            Entre com suas credenciais para
+            acessar o ChicoSense.
           </p>
 
           <Input
@@ -116,7 +167,10 @@ export default function Login({ onContinue }) {
             placeholder="nome@empresa.com.br"
             autoComplete="email"
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) =>
+              setEmail(event.target.value)
+            }
+            disabled={loading}
             required
           />
 
@@ -127,27 +181,28 @@ export default function Login({ onContinue }) {
             placeholder="Digite sua senha"
             autoComplete="current-password"
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
+            onChange={(event) =>
+              setPassword(event.target.value)
+            }
+            disabled={loading}
             required
           />
 
           {error && (
             <p
+              className="login-form__error"
               role="alert"
-              style={{
-                color: "#dc2626",
-                fontSize: "14px",
-                marginTop: "10px",
-              }}
             >
               {error}
             </p>
           )}
 
-          <Button type="submit" disabled={loading}>
-            {loading
-              ? "Entrando..."
-              : "Continuar para seleção de perfil"}
+          <Button
+            type="submit"
+            loading={loading}
+            disabled={loading}
+          >
+            Entrar
           </Button>
         </form>
       </section>

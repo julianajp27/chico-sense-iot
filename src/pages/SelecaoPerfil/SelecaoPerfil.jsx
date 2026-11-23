@@ -1,6 +1,8 @@
-import { Activity, Leaf, Store, Truck } from "lucide-react";
-import Button                           from "../../components/UI/Button";
-import Card                             from "../../components/UI/Card";
+import { Leaf, Store, Truck } from "lucide-react";
+
+import logo from "../../assets/logo-chicosense-48x48.png";
+import Button from "../../components/UI/Button";
+import Card from "../../components/UI/Card";
 
 const profiles = [
   {
@@ -26,70 +28,65 @@ const profiles = [
   },
 ];
 
-export default function SelecaoPerfil({
-  user,
-  onSelect,
-  onExit,
-}) {
+export default function SelecaoPerfil({ onSelect }) {
   return (
-    <div className        ="profile-page">
-      <header className   ="profile-page__header">
-        <div className    ="access-brand">
-          <span className ="access-brand__icon">
-            <Activity size={24} aria-hidden="true" />
-          </span>
+    <div className="profile-page">
+      <header className="profile-page__header">
+        <div className="access-brand">
+          <img
+            src={logo}
+            alt=""
+            className="profile-page__logo"
+            width={48}
+            height={48}
+          />
 
           <div>
             <strong>ChicoSense</strong>
+
             <span className="access-brand__caption">
               COLD CHAIN INTELLIGENCE
             </span>
           </div>
         </div>
-
-        <Button variant="ghost" onClick={onExit}>
-          Voltar ao login
-        </Button>
       </header>
 
-      <main className  ="profile-page__content">
-        <div className ="profile-page__heading">
+      <main className="profile-page__content">
+        <div className="profile-page__heading">
           <h1>Como você deseja acessar o ChicoSense?</h1>
 
           <p>
-            Selecione seu perfil. Todas as opções compartilham
-            as mesmas funcionalidades.
-          </p>
-
-          <p className="profile-page__email">
-            {user?.email}
+            Escolha seu perfil para continuar ao login.
+            Todas as opções compartilham as mesmas funcionalidades.
           </p>
         </div>
 
         <div className="profile-page__grid">
-          {profiles.map(({ value, title, description, icon: Icon }) => (
-            <Card key={value} className="profile-card">
-              <span className="profile-card__icon">
-                <Icon size={25} aria-hidden="true" />
-              </span>
+          {profiles.map(
+            ({ value, title, description, icon: Icon }) => (
+              <Card key={value} className="profile-card">
+                <span className="profile-card__icon" aria-hidden="true">
+                  <Icon size={25} />
+                </span>
 
-              <h2 className="profile-card__title">{title}</h2>
+                <h2 className="profile-card__title">{title}</h2>
 
-              <p className="profile-card__description">
-                {description}
-              </p>
+                <p className="profile-card__description">
+                  {description}
+                </p>
 
-              <Button
-                variant={
-                  value === "logistica" ? "primary" : "secondary"
-                }
-                onClick={() => onSelect(value)}
-                aria-label={`Acessar como ${title}`}
-              >
-                Acessar perfil
-              </Button>
-            </Card>
-          ))}
+                <Button
+                  variant={
+                    value === "logistica" ? "primary" : "secondary"
+                  }
+                  onClick={() => onSelect(value)}
+                  aria-label={`Continuar como ${title}`}
+                >
+                  Continuar
+                </Button>
+              </Card>
+            )
+          )}
         </div>
 
         <p className="profile-page__hint">
