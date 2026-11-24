@@ -1,0 +1,29 @@
+{
+  "data": "2026-11-24",
+  "frontend_commit_base": "554296eb4c7c746eb98cdf40a25b960ea63ab235",
+  "branch_trabalho": "fix/autenticacao-vercel",
+  "backend_commit_lido": "816bc4b728c711065cf01567c3bac491210e2277",
+  "baseline_bundle": "index-CEdMBCrB.js",
+  "baseline_build_sha256": "0f947c0f377d9ce873156658c27c90f3cd40613f1e322d87bfe4a68fa982161a",
+  "published_bundle_sha256": "0f947c0f377d9ce873156658c27c90f3cd40613f1e322d87bfe4a68fa982161a",
+  "baseline_publicado_igual": true,
+  "build_corrigido": {
+    "arquivo": "index-Kvn06UCl.js",
+    "sha256": "c1a9bc9a1177400c612ddfc9eef6c3579e2c9725357d326755efffa764f172e4"
+  },
+  "teste_variavel_build": {
+    "marcador": "https://api-build-proof.example.invalid",
+    "incorporado": true,
+    "publicado": false
+  },
+  "tests": {
+    "total": 37,
+    "passou": 37,
+    "falhou": 0
+  },
+  "lint": {
+    "exit_code": 0,
+    "warnings": 23
+  },
+  "backend_tracked_changes": []
+}

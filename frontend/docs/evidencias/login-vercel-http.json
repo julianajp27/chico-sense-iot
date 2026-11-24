@@ -1,0 +1,145 @@
+{
+  "data": "2026-11-24",
+  "observacoes": "HTTP direto; não é um HAR do navegador. Sem autenticação real, cookies ou tokens.",
+  "checks": [
+    {
+      "name": "frontend",
+      "method": "GET",
+      "url": "https://chico-sense-frontend.vercel.app",
+      "status": 200,
+      "headers": {
+        "access-control-allow-origin": "*",
+        "content-type": "text/html; charset=utf-8",
+        "x-vercel-cache": "HIT"
+      },
+      "body_sha256": "058927732df6967bd6669534eb95ebc4f6f63925943fc851283e14c4179b12b7",
+      "scripts": [
+        "/assets/index-CEdMBCrB.js"
+      ],
+      "bundle_sha256": "0f947c0f377d9ce873156658c27c90f3cd40613f1e322d87bfe4a68fa982161a"
+    },
+    {
+      "name": "dashboard",
+      "method": "GET",
+      "url": "https://chico-sense-frontend.vercel.app/dashboard",
+      "status": 404,
+      "headers": {
+        "content-type": "text/plain; charset=utf-8"
+      },
+      "body_sha256": "6754365205e6f238539367a91e7b2a5d6197c74ff5c6e43802d310ce27dcf697"
+    },
+    {
+      "name": "health-vercel",
+      "method": "GET",
+      "url": "https://chico-sense-back.onrender.com/health",
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "access-control-allow-credentials": "true",
+        "vary": "Accept-Encoding"
+      },
+      "body_sha256": "485812145f176f66eea33ff7654e1638c1a2882b8dcfa7836c9914eb5a6817fe",
+      "body": "{\"status\":\"ok\",\"service\":\"chicosense-api\"}"
+    },
+    {
+      "name": "health-local",
+      "method": "GET",
+      "url": "https://chico-sense-back.onrender.com/health",
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-origin": "http://localhost:5173",
+        "vary": "Origin, Accept-Encoding"
+      },
+      "body_sha256": "485812145f176f66eea33ff7654e1638c1a2882b8dcfa7836c9914eb5a6817fe",
+      "body": "{\"status\":\"ok\",\"service\":\"chicosense-api\"}"
+    },
+    {
+      "name": "login-preflight",
+      "method": "OPTIONS",
+      "url": "https://chico-sense-back.onrender.com/api/v1/auth/login",
+      "status": 400,
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": "content-type",
+        "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "access-control-max-age": "600",
+        "vary": "Origin, Accept-Encoding"
+      },
+      "body_sha256": "f80399859bbd7b2cb1cac34d88e0f01461619f351b476926e2465eea789098d4",
+      "body": "Disallowed CORS origin"
+    },
+    {
+      "name": "me-preflight",
+      "method": "OPTIONS",
+      "url": "https://chico-sense-back.onrender.com/api/v1/auth/me",
+      "status": 400,
+      "headers": {
+        "content-type": "text/plain; charset=utf-8",
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": "authorization",
+        "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "access-control-max-age": "600",
+        "vary": "Origin, Accept-Encoding"
+      },
+      "body_sha256": "f80399859bbd7b2cb1cac34d88e0f01461619f351b476926e2465eea789098d4",
+      "body": "Disallowed CORS origin"
+    },
+    {
+      "name": "me-no-token",
+      "method": "GET",
+      "url": "https://chico-sense-back.onrender.com/api/v1/auth/me",
+      "status": 401,
+      "headers": {
+        "content-type": "application/json",
+        "access-control-allow-credentials": "true",
+        "vary": "Accept-Encoding"
+      },
+      "body_sha256": "b66a74d7560df6815a2e5816ff4428c0167ff97ca519210a1204ce2c5d4d10e7",
+      "body": "{\"detail\":\"Credenciais invalidas.\"}"
+    },
+    {
+      "name": "openapi",
+      "method": "GET",
+      "url": "https://chico-sense-back.onrender.com/openapi.json",
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "vary": "Accept-Encoding"
+      },
+      "body_sha256": "7ca4042c1398a848ec8b1a4e867abbf4dff8c915a3a0d8779bb323fe1c18a7fc"
+    },
+    {
+      "name": "login-preflight-local",
+      "method": "OPTIONS",
+      "url": "https://chico-sense-back.onrender.com/api/v1/auth/login",
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": "content-type",
+        "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "access-control-allow-origin": "http://localhost:5173",
+        "access-control-max-age": "600",
+        "vary": "Origin, Accept-Encoding"
+      },
+      "body": "OK"
+    },
+    {
+      "name": "me-preflight-local",
+      "method": "OPTIONS",
+      "url": "https://chico-sense-back.onrender.com/api/v1/auth/me",
+      "status": 200,
+      "headers": {
+        "access-control-allow-credentials": "true",
+        "access-control-allow-headers": "authorization",
+        "access-control-allow-methods": "DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT",
+        "access-control-allow-origin": "http://localhost:5173",
+        "access-control-max-age": "600",
+        "vary": "Origin, Accept-Encoding"
+      },
+      "body": "OK"
+    }
+  ]
+}
