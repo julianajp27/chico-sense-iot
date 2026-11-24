@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from "react";
+
 import {
   Navigate,
   Route,
@@ -14,8 +15,15 @@ import useSystemStatus from "./hooks/useSystemStatus";
 import Login from "./pages/Login/Login";
 import AppRoutes from "./routes/AppRoutes";
 
-const validProfiles = ["produtor", "logistica", "cliente"];
+// Perfis reconhecidos pelo frontend
+const validProfiles = [
+  "admin",
+  "produtor",
+  "logistica",
+  "cliente",
+];
 
+// Normaliza o perfil retornado pelo backend
 function normalizeProfile(value) {
   const normalized = String(value ?? "")
     .normalize("NFD")
@@ -24,6 +32,7 @@ function normalizeProfile(value) {
     .trim();
 
   const aliases = {
+    admin: "admin",
     produtor: "produtor",
     producer: "produtor",
     logistica: "logistica",
@@ -36,27 +45,12 @@ function normalizeProfile(value) {
   return aliases[normalized] || null;
 }
 
+// Identifica o perfil do usuário autenticado
 function getUserProfile(user) {
-  const candidates = [
-    user?.perfil,
-    user?.profile,
-    user?.tipo_usuario,
-    user?.tipo,
-    user?.role,
-    user?.papel,
-  ];
+  const profile = normalizeProfile(user?.perfil);
 
-  for (const candidate of candidates) {
-    const value =
-      typeof candidate === "object" && candidate !== null
-        ? candidate.nome ?? candidate.name ?? candidate.codigo
-        : candidate;
-
-    const profile = normalizeProfile(value);
-
-    if (profile && validProfiles.includes(profile)) {
-      return profile;
-    }
+  if (profile && validProfiles.includes(profile)) {
+    return profile;
   }
 
   return null;
@@ -72,10 +66,12 @@ export default function App() {
 
   const system = useSystemStatus();
 
+  // Fecha o menu ao mudar de página
   useEffect(() => {
     setIsMenuOpen(false);
   }, [location.pathname]);
 
+  // Fecha o menu ao pressionar Escape
   useEffect(() => {
     if (!isMenuOpen) return;
 
@@ -88,10 +84,14 @@ export default function App() {
     window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
     };
   }, [isMenuOpen]);
 
+  // Trata a expiração da sessão
   useEffect(() => {
     function handleSessionExpired() {
       sessionStorage.removeItem("chicosense_token");
@@ -116,16 +116,30 @@ export default function App() {
     };
   }, [navigate]);
 
+  // Finaliza a autenticação
   function handleContinue(loginUser) {
-    const authenticatedProfile = getUserProfile(loginUser);
+    if (loginUser?.ativo !== true) {
+      sessionStorage.removeItem("chicosense_token");
+
+      setUser(null);
+      setProfile(null);
+
+      throw new Error(
+        "Sua conta está inativa ou não pôde ser validada."
+      );
+    }
+
+    const authenticatedProfile =
+      getUserProfile(loginUser);
 
     if (!authenticatedProfile) {
       console.error(
-        "O backend não retornou um perfil reconhecido.",
-        loginUser
+        "Perfil não reconhecido:",
+        loginUser?.perfil
       );
 
       sessionStorage.removeItem("chicosense_token");
+
       setUser(null);
       setProfile(null);
 
@@ -141,6 +155,7 @@ export default function App() {
     navigate("/dashboard", { replace: true });
   }
 
+  // Encerra a sessão
   function handleExit() {
     sessionStorage.removeItem("chicosense_token");
 
@@ -159,7 +174,11 @@ export default function App() {
         path="/"
         element={
           <Navigate
-            to={isAuthenticated ? "/dashboard" : "/login"}
+            to={
+              isAuthenticated
+                ? "/dashboard"
+                : "/login"
+            }
             replace
           />
         }
@@ -167,7 +186,9 @@ export default function App() {
 
       <Route
         path="/selecionar-perfil"
-        element={<Navigate to="/login" replace />}
+        element={
+          <Navigate to="/login" replace />
+        }
       />
 
       <Route
@@ -198,13 +219,17 @@ export default function App() {
               <Sidebar
                 user={user}
                 alertCount={0}
-                systemOnline={system.status === "online"}
+                systemOnline={
+                  system.status === "online"
+                }
                 systemChecking={
                   system.status === "checking"
                 }
                 lastReading={system.lastCheck}
                 isOpen={isMenuOpen}
-                onClose={() => setIsMenuOpen(false)}
+                onClose={() =>
+                  setIsMenuOpen(false)
+                }
                 onLogout={handleExit}
               />
 
@@ -217,7 +242,9 @@ export default function App() {
                     navigate("/alertas")
                   }
                   onMenuClick={() =>
-                    setIsMenuOpen((current) => !current)
+                    setIsMenuOpen(
+                      (current) => !current
+                    )
                   }
                   isMenuOpen={isMenuOpen}
                 />
