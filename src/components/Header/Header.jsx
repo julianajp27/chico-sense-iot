@@ -1,12 +1,6 @@
 
 import { Bell, Menu, ShieldCheck } from "lucide-react";
-
-const profileLabels = {
-  admin: "Administrador",
-  produtor: "Produtor",
-  logistica: "Logística",
-  cliente: "Cliente / Mercado",
-};
+import { PROFILE_LABELS } from "../../services/authProfile";
 
 function getInitials(name = "") {
   return (
@@ -31,7 +25,7 @@ export default function Header({
   isDemo = false,
 }) {
   const profileLabel =
-    profileLabels[profile] || "Não identificado";
+    PROFILE_LABELS[profile] || "Não identificado";
 
   return (
     <header className="header">

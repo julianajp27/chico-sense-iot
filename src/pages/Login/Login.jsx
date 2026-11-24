@@ -5,10 +5,8 @@ import logo from "../../assets/chicosense-branco-250x80.png";
 import Button from "../../components/UI/Button";
 import Input from "../../components/UI/Input";
 
-import {
-  fazerLogin,
-  buscarUsuario,
-} from "../../services/authService";
+import { autenticar, loginErrorMessage } from "../../services/authService";
+import { clearSessionToken, setSessionToken } from "../../services/session";
 
 export default function Login({ onContinue }) {
   const [email, setEmail] = useState("");
@@ -24,77 +22,16 @@ export default function Login({ onContinue }) {
     setError("");
     setLoading(true);
 
-    sessionStorage.removeItem("chicosense_token");
+    clearSessionToken();
 
     try {
-      // 1. Autenticar com e-mail e senha
-      const loginData = await fazerLogin(
-        email.trim(),
-        password
-      );
-
-      const token = loginData?.access_token;
-
-      if (typeof token !== "string" || !token.trim()) {
-        throw new Error(
-          "Token de acesso ausente na resposta."
-        );
-      }
-
-      // 2. Consultar os dados do usuário autenticado
-      const usuario = await buscarUsuario(token);
-
-      if (
-        !usuario ||
-        typeof usuario !== "object" ||
-        Array.isArray(usuario)
-      ) {
-        throw new Error(
-          "Resposta de usuário inválida."
-        );
-      }
-
-      // 3. Armazenar o token da sessão
-      sessionStorage.setItem(
-        "chicosense_token",
-        token
-      );
-
-      // 4. Enviar o usuário ao App.jsx
-      // O perfil será identificado automaticamente lá.
-      await onContinue({
-        ...usuario,
-        name: usuario.name || usuario.nome || "",
-        email: usuario.email || email.trim(),
-      });
-
+      const { token, user } = await autenticar(email, password);
+      // Only a user with ativo=true and a recognized API role reaches storage.
+      setSessionToken(token);
+      await onContinue(user);
     } catch (err) {
-      sessionStorage.removeItem("chicosense_token");
-
-      const status = err?.response?.status;
-
-      if (status === 401) {
-        setError(
-          "E-mail ou senha incorretos, ou sessão não autorizada."
-        );
-      } else if (status === 403) {
-        setError(
-          "Seu usuário não tem permissão para acessar."
-        );
-      } else if (status === 422) {
-        setError(
-          "Verifique os dados informados."
-        );
-      } else if (status === 404) {
-        setError(
-          "O serviço de autenticação não foi encontrado."
-        );
-      } else {
-        setError(
-          err?.message ||
-          "Não foi possível concluir o login. Tente novamente."
-        );
-      }
+      clearSessionToken();
+      setError(loginErrorMessage(err));
     } finally {
       setPassword("");
       setLoading(false);

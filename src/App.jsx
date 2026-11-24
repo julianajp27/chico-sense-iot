@@ -14,57 +14,49 @@ import Sidebar from "./components/Sidebar/Sidebar";
 import useSystemStatus from "./hooks/useSystemStatus";
 import Login from "./pages/Login/Login";
 import AppRoutes from "./routes/AppRoutes";
-
-// Perfis reconhecidos pelo frontend
-const validProfiles = [
-  "admin",
-  "produtor",
-  "logistica",
-  "cliente",
-];
-
-// Normaliza o perfil retornado pelo backend
-function normalizeProfile(value) {
-  const normalized = String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .trim();
-
-  const aliases = {
-    admin: "admin",
-    produtor: "produtor",
-    producer: "produtor",
-    logistica: "logistica",
-    logistics: "logistica",
-    cliente: "cliente",
-    client: "cliente",
-    mercado: "cliente",
-  };
-
-  return aliases[normalized] || null;
-}
-
-// Identifica o perfil do usuário autenticado
-function getUserProfile(user) {
-  const profile = normalizeProfile(user?.perfil);
-
-  if (profile && validProfiles.includes(profile)) {
-    return profile;
-  }
-
-  return null;
-}
+import { buscarUsuario } from "./services/authService";
+import { getUserProfile, validateUser } from "./services/authProfile";
+import { clearSessionToken, getSessionToken } from "./services/session";
 
 export default function App() {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [restoring, setRestoring] = useState(() => Boolean(getSessionToken()));
+  const [restoreError, setRestoreError] = useState("");
+  const [restoreAttempt, setRestoreAttempt] = useState(0);
 
   const location = useLocation();
   const navigate = useNavigate();
 
   const system = useSystemStatus();
+
+  useEffect(() => {
+    const token = getSessionToken();
+    if (!token) return;
+    let cancelled = false;
+
+    async function restore() {
+      try {
+        const restored = validateUser(await buscarUsuario(token));
+        if (cancelled || getSessionToken() !== token) return;
+        setUser(restored);
+        setProfile(getUserProfile(restored));
+      } catch (error) {
+        if (cancelled || getSessionToken() !== token) return;
+        const status = error.response?.status;
+        if (error.isAxiosError && (!error.response || status >= 500 || status === 429)) {
+          setRestoreError("Não foi possível verificar a sessão na API. Tente novamente ou volte ao login.");
+        } else {
+          clearSessionToken();
+        }
+      } finally {
+        if (!cancelled) setRestoring(false);
+      }
+    }
+    restore();
+    return () => { cancelled = true; };
+  }, [restoreAttempt]);
 
   // Fecha o menu ao mudar de página
   useEffect(() => {
@@ -94,11 +86,13 @@ export default function App() {
   // Trata a expiração da sessão
   useEffect(() => {
     function handleSessionExpired() {
-      sessionStorage.removeItem("chicosense_token");
+      clearSessionToken();
 
       setUser(null);
       setProfile(null);
       setIsMenuOpen(false);
+      setRestoring(false);
+      setRestoreError("");
 
       navigate("/login", { replace: true });
     }
@@ -118,55 +112,40 @@ export default function App() {
 
   // Finaliza a autenticação
   function handleContinue(loginUser) {
-    if (loginUser?.ativo !== true) {
-      sessionStorage.removeItem("chicosense_token");
-
-      setUser(null);
-      setProfile(null);
-
-      throw new Error(
-        "Sua conta está inativa ou não pôde ser validada."
-      );
-    }
-
-    const authenticatedProfile =
-      getUserProfile(loginUser);
-
-    if (!authenticatedProfile) {
-      console.error(
-        "Perfil não reconhecido:",
-        loginUser?.perfil
-      );
-
-      sessionStorage.removeItem("chicosense_token");
-
-      setUser(null);
-      setProfile(null);
-
-      throw new Error(
-        "Não foi possível identificar seu perfil de acesso. " +
-        "Verifique as informações da conta."
-      );
-    }
-
-    setUser(loginUser);
-    setProfile(authenticatedProfile);
+    const validated = validateUser(loginUser);
+    setUser(validated);
+    setProfile(getUserProfile(validated));
 
     navigate("/dashboard", { replace: true });
   }
 
   // Encerra a sessão
   function handleExit() {
-    sessionStorage.removeItem("chicosense_token");
+    clearSessionToken();
 
     setUser(null);
     setProfile(null);
     setIsMenuOpen(false);
+    setRestoring(false);
+    setRestoreError("");
 
     navigate("/login", { replace: true });
   }
 
   const isAuthenticated = Boolean(user && profile);
+
+  if (restoring) return <main role="status">Verificando sessão…</main>;
+  if (restoreError) return (
+    <main>
+      <p role="alert">{restoreError}</p>
+      <button type="button" onClick={() => {
+        setRestoreError("");
+        setRestoring(true);
+        setRestoreAttempt((value) => value + 1);
+      }}>Tentar novamente</button>
+      <button type="button" onClick={handleExit}>Voltar ao login</button>
+    </main>
+  );
 
   return (
     <Routes>
