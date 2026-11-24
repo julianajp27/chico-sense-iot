@@ -2,6 +2,7 @@
 import { Bell, Menu, ShieldCheck } from "lucide-react";
 
 const profileLabels = {
+  admin: "Administrador",
   produtor: "Produtor",
   logistica: "Logística",
   cliente: "Cliente / Mercado",

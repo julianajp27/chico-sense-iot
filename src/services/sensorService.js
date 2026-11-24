@@ -1,42 +1,117 @@
+
 import api from "./api";
 
-export async function listarLeituras() {
-  const response = await api.get(
-    "/api/v1/integracoes/thingspeak/feeds",
-    {
-      params: { results: 10 },
-    }
+import {
+  listarLeiturasSessao,
+  normalizarLeituras,
+} from "./monitoramentoService";
+
+// ==========================================
+// LEITURAS OPERACIONAIS POR SESSÃO
+// ==========================================
+
+export async function listarLeituras(
+  sessaoId,
+  { limit = 100, offset = 0 } = {}
+) {
+  if (!sessaoId) {
+    return [];
+  }
+
+  const resposta = await listarLeiturasSessao(
+    sessaoId,
+    { limit, offset }
   );
 
-  const leituras = response.data.leituras_normalizadas ?? [];
+  const leituras = normalizarLeituras(
+    resposta.leituras
+  );
+
   const registros = new Map();
 
   leituras.forEach((leitura) => {
-    if (leitura.ignorada) return;
+    const timestamp = leitura.timestamp;
 
-    const id = leitura.entry_id;
+    if (!timestamp) return;
 
-    if (!registros.has(id)) {
-      registros.set(id, {
-        timestamp: leitura.created_at,
+    if (!registros.has(timestamp)) {
+      registros.set(timestamp, {
+        timestamp,
         temperature: null,
         humidity: null,
       });
     }
 
-    const registro = registros.get(id);
-    const valor = Number(leitura.valor);
+    const registro = registros.get(timestamp);
 
-    if (!Number.isFinite(valor)) return;
+    const tipo = String(leitura.tipo ?? "")
+      .trim()
+      .toUpperCase();
 
-    if (leitura.tipo === "TEMPERATURA") {
-      registro.temperature = valor;
+    if (
+      tipo === "TEMPERATURA" ||
+      tipo === "TEMPERATURE"
+    ) {
+      registro.temperature = leitura.valor;
     }
 
-    if (leitura.tipo === "UMIDADE") {
-      registro.humidity = valor;
+    if (
+      tipo === "UMIDADE" ||
+      tipo === "HUMIDITY"
+    ) {
+      registro.humidity = leitura.valor;
     }
   });
 
-  return Array.from(registros.values());
+  return Array.from(registros.values()).sort(
+    (a, b) =>
+      new Date(a.timestamp) - new Date(b.timestamp)
+  );
+}
+
+// ==========================================
+// THINGSPEAK - EXCLUSIVO DO ADMIN
+// ==========================================
+
+// Consulta configuração da integração global
+export async function obterStatusThingSpeak() {
+  const { data } = await api.get(
+    "/api/v1/integracoes/thingspeak/status"
+  );
+
+  return data;
+}
+
+// Consulta feeds globais
+export async function listarFeedsThingSpeak(results = 10) {
+  const { data } = await api.get(
+    "/api/v1/integracoes/thingspeak/feeds",
+    {
+      params: { results },
+    }
+  );
+
+  return data;
+}
+
+// Consulta última leitura global
+export async function obterUltimaLeituraThingSpeak() {
+  const { data } = await api.get(
+    "/api/v1/integracoes/thingspeak/ultima-leitura"
+  );
+
+  return data;
+}
+
+// Sincronização administrativa global
+export async function sincronizarThingSpeak(results = 100) {
+  const { data } = await api.post(
+    "/api/v1/integracoes/thingspeak/sincronizar",
+    null,
+    {
+      params: { results },
+    }
+  );
+
+  return data;
 }

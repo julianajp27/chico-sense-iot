@@ -1,223 +1,96 @@
 
+import api from "./api";
+
 import {
   listarSessoesCarga,
-  listarLeiturasSessao,
-  normalizarLeituras,
+  listarSessoesViagem,
 } from "./monitoramentoService";
 
-// Converte valores numéricos, inclusive decimais recebidos como string.
-function numero(valor) {
-  if (valor === null || valor === undefined || valor === "") {
-    return null;
+const BASE_URL = "/api/v1/monitoramentos";
+
+function validarId(id, mensagem) {
+  if (!id) {
+    throw new Error(mensagem);
   }
-
-  const resultado = Number(String(valor).replace(",", "."));
-
-  return Number.isFinite(resultado) ? resultado : null;
 }
 
-// Identifica o tipo de medição.
-function identificarTipo(tipo = "") {
-  const texto = String(tipo).toLowerCase();
+function extrairAlertas(data) {
+  if (Array.isArray(data)) return data;
 
-  if (
-    texto.includes("temperatura") ||
-    texto.includes("temperature")
-  ) {
-    return "temperatura";
-  }
-
-  if (
-    texto.includes("umidade") ||
-    texto.includes("humidity")
-  ) {
-    return "umidade";
-  }
-
-  return null;
-}
-
-// Obtém os limites da configuração da carga.
-// Não cria limites artificiais quando não estão disponíveis.
-function obterLimites(configuracao, tipo) {
-  const origem =
-    configuracao?.[tipo] ??
-    configuracao?.parametros?.[tipo] ??
-    configuracao?.limites?.[tipo] ??
-    {};
-
-  return {
-    minimo: numero(
-      origem.minimo ??
-      origem.valor_minimo ??
-      origem.min ??
-      configuracao?.[`${tipo}_minima`] ??
-      configuracao?.[`${tipo}_minimo`]
-    ),
-    maximo: numero(
-      origem.maximo ??
-      origem.valor_maximo ??
-      origem.max ??
-      configuracao?.[`${tipo}_maxima`] ??
-      configuracao?.[`${tipo}_maximo`]
-    ),
-  };
-}
-
-// Avalia uma leitura usando os limites conhecidos.
-export function avaliarLeitura(leitura, configuracao) {
-  const tipo = identificarTipo(leitura.tipo);
-
-  if (!tipo) return null;
-
-  const valor = numero(leitura.valor);
-
-  if (valor === null) return null;
-
-  const { minimo, maximo } = obterLimites(
-    configuracao,
-    tipo
-  );
-
-  if (minimo === null && maximo === null) {
-    return null;
-  }
-
-  let motivo = null;
-
-  if (minimo !== null && valor < minimo) {
-    motivo = "abaixo do limite mínimo";
-  }
-
-  if (maximo !== null && valor > maximo) {
-    motivo = "acima do limite máximo";
-  }
-
-  return {
-    ...leitura,
-    tipo,
-    valor,
-    minimo,
-    maximo,
-    foraDoLimite: Boolean(motivo),
-    motivo,
-  };
-}
-
-// Monta as ocorrências a partir das leituras reais.
-// Cada ocorrência permanece ativa até uma leitura posterior
-// do mesmo sensor retornar à faixa permitida.
-export function gerarAlertasDasLeituras(
-  leituras = [],
-  configuracao = {},
-  contexto = {}
-) {
-  const ordenadas = [...leituras].sort(
-    (a, b) =>
-      new Date(a.timestamp) - new Date(b.timestamp)
-  );
-
-  const ocorrencias = [];
-  const abertas = new Map();
-
-  for (const leitura of ordenadas) {
-    const avaliacao = avaliarLeitura(
-      leitura,
-      configuracao
-    );
-
-    if (!avaliacao) continue;
-
-    const chave = [
-      avaliacao.sensorId ?? "sem-sensor",
-      avaliacao.tipo,
-    ].join(":");
-
-    const aberta = abertas.get(chave);
-
-    if (avaliacao.foraDoLimite) {
-      if (aberta) {
-        aberta.ultimaLeitura = avaliacao.timestamp;
-        aberta.valor = avaliacao.valor;
-        continue;
-      }
-
-      const titulo =
-        avaliacao.tipo === "temperatura"
-          ? "Temperatura fora do limite"
-          : "Umidade fora do limite";
-
-      const ocorrencia = {
-        id: `${contexto.sessaoId}-${chave}-${avaliacao.id ?? avaliacao.timestamp}`,
-        title: titulo,
-        titulo,
-        description: `${titulo}: ${avaliacao.valor} ${avaliacao.unidade ?? ""} (${avaliacao.motivo}).`,
-        descricao: `${titulo}: ${avaliacao.valor} ${avaliacao.unidade ?? ""} (${avaliacao.motivo}).`,
-        status: "new",
-        severity: "warning",
-        tipo: avaliacao.tipo,
-        valor: avaliacao.valor,
-        unidade: avaliacao.unidade,
-        minimo: avaliacao.minimo,
-        maximo: avaliacao.maximo,
-        sensorId: avaliacao.sensorId,
-        timestamp: avaliacao.timestamp,
-        createdAt: avaliacao.timestamp,
-        ultimaLeitura: avaliacao.timestamp,
-        viagemId: contexto.viagemId,
-        cargaId: contexto.cargaId,
-        sessaoId: contexto.sessaoId,
-      };
-
-      ocorrencias.push(ocorrencia);
-      abertas.set(chave, ocorrencia);
-      continue;
-    }
-
-    if (aberta) {
-      aberta.status = "resolved";
-      aberta.normalizadoEm = avaliacao.timestamp;
-      aberta.ultimaLeitura = avaliacao.timestamp;
-      abertas.delete(chave);
+  for (const chave of ["alertas", "items", "itens"]) {
+    if (Array.isArray(data?.[chave])) {
+      return data[chave];
     }
   }
 
-  return ocorrencias.reverse();
+  throw new Error(
+    "Formato de resposta dos alertas não reconhecido."
+  );
 }
 
-// Consulta as leituras de uma sessão e gera seus alertas.
+// ==========================================
+// CONSULTA DE ALERTAS
+// ==========================================
+
+// Adaptação provisória para os componentes atuais.
+// Confirmar os campos com o JSON real do Swagger.
+function mapAlerta(raw, contexto = {}) {
+  return {
+    ...raw,
+
+    id: raw.id ?? raw.alerta_id,
+
+    title: raw.titulo ?? raw.title ?? raw.tipo,
+    titulo: raw.titulo ?? raw.title ?? raw.tipo,
+
+    description: raw.descricao ?? raw.description,
+    descricao: raw.descricao ?? raw.description,
+
+    status: raw.status,
+    severity: raw.severidade ?? raw.severity,
+
+    timestamp:
+      raw.criado_em ??
+      raw.detectado_em ??
+      raw.timestamp,
+
+    createdAt:
+      raw.criado_em ??
+      raw.detectado_em ??
+      raw.timestamp,
+
+    sessaoId: contexto.sessaoId ?? raw.sessao_id,
+    cargaId: contexto.cargaId ?? raw.carga_id,
+    viagemId: contexto.viagemId ?? raw.viagem_id,
+  };
+}
+
+// Lista alertas oficiais de uma sessão.
+// O argumento configuracao foi mantido por
+// compatibilidade com as chamadas anteriores.
 export async function listarAlertasSessao(
   sessaoId,
-  configuracao,
+  configuracao = {},
   contexto = {}
 ) {
   if (!sessaoId) return [];
 
-  const resposta = await listarLeiturasSessao(sessaoId, {
-    limit: 100,
-    offset: 0,
-  });
+  const { data } = await api.get(
+    `${BASE_URL}/${sessaoId}/alertas`
+  );
 
-  const dados = Array.isArray(resposta)
-    ? resposta
-    : resposta?.leituras ?? [];
-
-  const leituras = normalizarLeituras(dados);
-
-  return gerarAlertasDasLeituras(
-    leituras,
-    configuracao,
-    {
+  return extrairAlertas(data).map((alerta) =>
+    mapAlerta(alerta, {
       ...contexto,
       sessaoId,
-    }
+    })
   );
 }
 
-// Consulta todas as sessões de uma carga.
+// Lista alertas das sessões de uma carga
 export async function listarAlertasCarga(
   cargaId,
-  configuracao,
+  configuracao = {},
   contexto = {}
 ) {
   if (!cargaId) return [];
@@ -227,7 +100,7 @@ export async function listarAlertasCarga(
   const resultados = await Promise.all(
     sessoes.map((sessao) =>
       listarAlertasSessao(
-        sessao.id,
+        sessao.id ?? sessao.sessao_id,
         configuracao,
         {
           ...contexto,
@@ -237,10 +110,167 @@ export async function listarAlertasCarga(
     )
   );
 
-  return resultados
-    .flat()
-    .sort(
-      (a, b) =>
-        new Date(b.timestamp) - new Date(a.timestamp)
-    );
+  return resultados.flat().sort(
+    (a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+  );
+}
+
+// Lista alertas das sessões de uma viagem
+export async function listarAlertasViagem(viagemId) {
+  if (!viagemId) return [];
+
+  const sessoes = await listarSessoesViagem(viagemId);
+
+  const resultados = await Promise.all(
+    sessoes.map((sessao) =>
+      listarAlertasSessao(
+        sessao.id ?? sessao.sessao_id,
+        {},
+        {
+          viagemId,
+          cargaId: sessao.carga_id,
+        }
+      )
+    )
+  );
+
+  return resultados.flat().sort(
+    (a, b) =>
+      new Date(b.timestamp) - new Date(a.timestamp)
+  );
+}
+
+// Consulta um alerta específico
+export async function obterAlerta(sessaoId, alertaId) {
+  validarId(sessaoId, "Informe a sessão.");
+  validarId(alertaId, "Informe o alerta.");
+
+  const { data } = await api.get(
+    `${BASE_URL}/${sessaoId}/alertas/${alertaId}`
+  );
+
+  return mapAlerta(data, { sessaoId });
+}
+
+// ==========================================
+// DECISÕES SOBRE ALERTAS
+// ==========================================
+
+// Registra uma decisão humana
+export async function registrarDecisaoAlerta(
+  sessaoId,
+  alertaId,
+  payload
+) {
+  validarId(sessaoId, "Informe a sessão.");
+  validarId(alertaId, "Informe o alerta.");
+
+  const { data } = await api.post(
+    `${BASE_URL}/${sessaoId}/alertas/${alertaId}/decisoes`,
+    payload
+  );
+
+  return data;
+}
+
+// Consulta histórico de decisões
+export async function listarDecisoesAlerta(
+  sessaoId,
+  alertaId
+) {
+  validarId(sessaoId, "Informe a sessão.");
+  validarId(alertaId, "Informe o alerta.");
+
+  const { data } = await api.get(
+    `${BASE_URL}/${sessaoId}/alertas/${alertaId}/decisoes`
+  );
+
+  return data;
+}
+
+// Consulta evidências de um alerta
+export async function listarEvidenciasAlerta(
+  sessaoId,
+  alertaId
+) {
+  validarId(sessaoId, "Informe a sessão.");
+  validarId(alertaId, "Informe o alerta.");
+
+  const { data } = await api.get(
+    `${BASE_URL}/${sessaoId}/alertas/${alertaId}/evidencias`
+  );
+
+  return data;
+}
+
+// ==========================================
+// MONITORAMENTO PREVENTIVO
+// ==========================================
+
+// Registra configuração ambiental
+export async function criarConfiguracaoAmbiental(
+  sessaoId,
+  payload
+) {
+  validarId(sessaoId, "Informe a sessão.");
+
+  const { data } = await api.post(
+    `${BASE_URL}/${sessaoId}/configuracoes-ambientais`,
+    payload
+  );
+
+  return data;
+}
+
+// Lista configurações ambientais
+export async function listarConfiguracoesAmbientais(sessaoId) {
+  validarId(sessaoId, "Informe a sessão.");
+
+  const { data } = await api.get(
+    `${BASE_URL}/${sessaoId}/configuracoes-ambientais`
+  );
+
+  return data;
+}
+
+// Solicita avaliação preventiva ao backend
+export async function criarAvaliacaoPreventiva(
+  sessaoId,
+  payload
+) {
+  validarId(sessaoId, "Informe a sessão.");
+
+  const { data } = await api.post(
+    `${BASE_URL}/${sessaoId}/avaliacoes-preventivas`,
+    payload
+  );
+
+  return data;
+}
+
+// Lista avaliações preventivas
+export async function listarAvaliacoesPreventivas(sessaoId) {
+  validarId(sessaoId, "Informe a sessão.");
+
+  const { data } = await api.get(
+    `${BASE_URL}/${sessaoId}/avaliacoes-preventivas`
+  );
+
+  return data;
+}
+
+// Consulta uma avaliação específica
+export async function obterAvaliacaoPreventiva(
+  sessaoId,
+  avaliacaoId
+) {
+  validarId(sessaoId, "Informe a sessão.");
+  validarId(avaliacaoId, "Informe a avaliação.");
+
+  const { data } = await api.get(
+    `${BASE_URL}/${sessaoId}/avaliacoes-preventivas/${avaliacaoId}`
+  );
+
+  return data;
 }
