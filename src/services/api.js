@@ -1,8 +1,9 @@
 
 import axios from "axios";
+import { clearSessionToken, getSessionToken } from "./session";
 
-const TOKEN_KEY = "chicosense_token";
 const LOGIN_URL = "/api/v1/auth/login";
+const PUBLIC_URLS = [LOGIN_URL, "/health"];
 
 const api = axios.create({
   baseURL: (
@@ -19,7 +20,12 @@ const api = axios.create({
 
 // Autorização das requisições
 api.interceptors.request.use((config) => {
-  const token = sessionStorage.getItem(TOKEN_KEY);
+  const token = getSessionToken();
+
+  if (PUBLIC_URLS.includes(config.url)) {
+    config.headers.delete("Authorization");
+    return config;
+  }
 
   if (
     token &&
@@ -95,8 +101,12 @@ api.interceptors.response.use(
       code: error.code,
     });
 
-    if (status === 401 && url !== LOGIN_URL) {
-      sessionStorage.removeItem(TOKEN_KEY);
+    const token = getSessionToken();
+    const sentAuthorization = error.config?.headers?.get?.("Authorization");
+    // A delayed 401 for an older token must not invalidate a newer login.
+    // Candidate tokens used by /auth/me before login completion are not sessions yet.
+    if (status === 401 && !PUBLIC_URLS.includes(url) && token && sentAuthorization === `Bearer ${token}`) {
+      clearSessionToken();
       window.dispatchEvent(new Event("auth:expired"));
     }
 

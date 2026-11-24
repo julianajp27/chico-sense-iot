@@ -17,6 +17,7 @@ import LoadingState from "../../components/UI/LoadingState";
 import { listarCargas } from "../../services/viagemService";
 import { obterMonitoramentoCarga } from "../../services/cargaService";
 import { listarLeituras } from "../../services/sensorService";
+import { PROFILE_LABELS } from "../../services/authProfile";
 
 const sections = [
   {
@@ -35,12 +36,6 @@ const sections = [
     icon: Radio,
   },
 ];
-
-const profileLabels = {
-  produtor: "Produtor",
-  logistica: "Logística",
-  cliente: "Cliente / Mercado",
-};
 
 function display(value) {
   return value === null ||
@@ -149,9 +144,9 @@ export default function Configuracoes({
                   </div>
 
                   <div>
-                    <dt>Perfil selecionado</dt>
+                    <dt>Perfil de acesso</dt>
                     <dd>
-                      {profileLabels[profile] ||
+                      {PROFILE_LABELS[profile] ||
                         display(profile)}
                     </dd>
                   </div>
