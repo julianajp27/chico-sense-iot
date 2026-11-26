@@ -1,0 +1,300 @@
+.thingspeak-ia {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  background: #ffffff;
+  color: #26364a;
+  border: 1px solid #dce4ec;
+  border-radius: 12px;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.thingspeak-ia__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.thingspeak-ia__header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 4px;
+  font-size: 18px;
+}
+
+.thingspeak-ia__header h2 svg {
+  color: #73951c;
+  flex-shrink: 0;
+}
+
+.thingspeak-ia__header p {
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.thingspeak-ia__controles {
+  display: flex;
+  align-items: center;
+}
+
+.thingspeak-ia__controles button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  background: #c4ef20;
+  color: #26364a;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.thingspeak-ia__controles button:hover {
+  background: #b2da18;
+}
+
+.thingspeak-ia__controles button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.thingspeak-ia__resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  background: #f8fafc;
+  border: 1px solid #dce4ec;
+  border-radius: 9px;
+  min-width: 0;
+}
+
+.thingspeak-ia__resultado.alerta {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
+.thingspeak-ia__resultado.alerta h3 {
+  color: #9a3412;
+}
+
+.thingspeak-ia__resultado h3 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+.thingspeak-ia__resumo-leitura {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.thingspeak-ia__informacoes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.thingspeak-ia__informacoes > div {
+  position: relative;
+  min-width: 0;
+  padding: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow-wrap: anywhere;
+  box-sizing: border-box;
+}
+
+.thingspeak-ia__informacoes > div > svg {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  color: #73951c;
+}
+
+.thingspeak-ia__informacoes small {
+  display: block;
+  margin-bottom: 5px;
+  color: #64748b;
+  font-size: 12px;
+}
+
+.thingspeak-ia__informacoes strong {
+  display: block;
+  color: #26364a;
+  font-size: 22px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.thingspeak-ia__recomendacao {
+  margin: 0;
+  padding: 10px 0 0;
+  border-top: 1px solid #e2e8f0;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.thingspeak-ia__detalhes {
+  border: 1px solid #dce4ec;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.thingspeak-ia__detalhes > summary {
+  padding: 11px 12px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.thingspeak-ia__detalhes > summary::marker {
+  color: #73951c;
+}
+
+.thingspeak-ia__detalhes > summary:hover {
+  background: #f4f6f8;
+}
+
+.thingspeak-ia__detalhes[open] > summary {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+/* Seis indicadores distribuídos igualmente */
+
+.thingspeak-ia__detalhes
+.thingspeak-ia__informacoes {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+  gap: 10px;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.thingspeak-ia__detalhes
+.thingspeak-ia__informacoes > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  padding: 12px;
+  min-height: 76px;
+  background: #f8fafc;
+}
+
+.thingspeak-ia__detalhes
+.thingspeak-ia__informacoes small {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.thingspeak-ia__detalhes
+.thingspeak-ia__informacoes strong {
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.thingspeak-ia__detalhes p {
+  margin: 0;
+  padding: 0 12px 12px;
+  font-size: 12px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.thingspeak-ia__erro {
+  margin: 0;
+  padding: 10px;
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.thingspeak-ia__limitacao {
+  margin: 0;
+  padding-top: 10px;
+  border-top: 1px solid #e2e8f0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.thingspeak-ia button:focus-visible,
+.thingspeak-ia summary:focus-visible {
+  outline: 2px solid #73951c;
+  outline-offset: 2px;
+}
+
+/* Responsividade */
+
+@media (max-width: 768px) {
+  .thingspeak-ia {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .thingspeak-ia__header h2 {
+    font-size: 16px;
+  }
+
+  .thingspeak-ia__resultado {
+    padding: 12px;
+  }
+
+  .thingspeak-ia__resultado h3 {
+    font-size: 16px;
+  }
+
+  .thingspeak-ia__informacoes strong {
+    font-size: 19px;
+  }
+
+  .thingspeak-ia__detalhes
+  .thingspeak-ia__informacoes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .thingspeak-ia__informacoes > div {
+    padding: 10px;
+  }
+
+  .thingspeak-ia__informacoes strong {
+    font-size: 17px;
+  }
+
+  .thingspeak-ia__informacoes > div > svg {
+    display: none;
+  }
+
+  .thingspeak-ia__detalhes
+  .thingspeak-ia__informacoes {
+    padding: 8px;
+  }
+
+  .thingspeak-ia__detalhes
+  .thingspeak-ia__informacoes > div {
+    padding: 10px;
+    min-height: 70px;
+  }
+
+  .thingspeak-ia__detalhes
+  .thingspeak-ia__informacoes strong {
+    font-size: 14px;
+  }
+}

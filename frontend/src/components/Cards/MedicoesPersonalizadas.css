@@ -1,0 +1,213 @@
+.medicoes-personalizadas {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.medicoes-personalizadas__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #dce4ed;
+  border-radius: 8px;
+  background: #f7f9fb;
+  color: #52657c;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.medicoes-personalizadas__notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.medicoes-personalizadas__table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #dce4ed;
+  border-radius: 8px;
+}
+
+.medicoes-personalizadas__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.medicoes-personalizadas__table th {
+  padding: 12px;
+  background: #eef2f6;
+  color: #26364a;
+  font-weight: 600;
+  text-align: center;
+}
+
+.medicoes-personalizadas__table td {
+  padding: 10px;
+  border-bottom: 1px solid #e6ebf1;
+  text-align: center;
+  color: #52657c;
+}
+
+.medicoes-personalizadas__table tr:last-child td {
+  border-bottom: none;
+  background: #f3f7e9;
+}
+
+.medicoes-personalizadas__table input {
+  width: 100%;
+  min-width: 75px;
+  box-sizing: border-box;
+  padding: 10px;
+  border: 1px solid #dce4ed;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #26364a;
+  text-align: center;
+  font: inherit;
+}
+
+.medicoes-personalizadas__table input:focus {
+  outline: 2px solid #a9ce29;
+  outline-offset: 1px;
+}
+
+.medicoes-personalizadas__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.medicoes-personalizadas__execute,
+.medicoes-personalizadas__clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 13px 18px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.medicoes-personalizadas__execute {
+  flex: 1;
+  border: none;
+  background: #c6ef32;
+  color: #26364a;
+}
+
+.medicoes-personalizadas__execute:hover:not(:disabled) {
+  background: #b4dc24;
+}
+
+.medicoes-personalizadas__clear {
+  border: 1px solid #dce4ed;
+  background: #ffffff;
+  color: #52657c;
+}
+
+.medicoes-personalizadas__clear:hover:not(:disabled) {
+  background: #eef2f6;
+}
+
+.medicoes-personalizadas__execute:disabled,
+.medicoes-personalizadas__clear:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.medicoes-personalizadas__spinner {
+  animation: medicoes-spin 0.8s linear infinite;
+}
+
+@keyframes medicoes-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.medicoes-personalizadas__result {
+  padding: 18px;
+  border: 1px solid #dce4ed;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.medicoes-personalizadas__result h3 {
+  margin: 0 0 14px;
+  color: #26364a;
+  font-size: 17px;
+}
+
+.medicoes-personalizadas__result--anomaly {
+  border-color: #e9c584;
+  background: #fff8eb;
+}
+
+.medicoes-personalizadas__result--anomaly h3 {
+  color: #a66c12;
+}
+
+.medicoes-personalizadas__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.medicoes-personalizadas__metrics > div {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  min-width: 0;
+  border: 1px solid #dce4ed;
+  border-radius: 8px;
+  background: #f5f7fa;
+}
+
+.medicoes-personalizadas__metrics span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.medicoes-personalizadas__metrics strong {
+  font-size: 23px;
+  color: #26364a;
+  overflow-wrap: anywhere;
+}
+
+.medicoes-personalizadas__result p {
+  line-height: 1.6;
+}
+
+.medicoes-personalizadas__footnote {
+  font-size: 12px;
+  color: #64748b;
+}
+
+@media (max-width: 600px) {
+  .medicoes-personalizadas__metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .medicoes-personalizadas__actions {
+    flex-direction: column;
+  }
+
+  .medicoes-personalizadas__table td {
+    padding: 6px;
+  }
+
+  .medicoes-personalizadas__metrics strong {
+    font-size: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .medicoes-personalizadas__spinner {
+    animation: none;
+  }
+}
