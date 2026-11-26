@@ -1,0 +1,63 @@
+.central-ia {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.central-ia__secao {
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #dce4ec;
+  border-radius: 10px;
+}
+
+.central-ia__secao > summary {
+  padding: 14px 16px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 10px;
+}
+
+.central-ia__secao > summary:hover {
+  background: #f4f6f8;
+}
+
+.central-ia__secao > summary::marker {
+  color: #73951c;
+}
+
+.central-ia__secao[open] > summary {
+  border-bottom: 1px solid #dce4ec;
+  border-radius: 10px 10px 0 0;
+}
+
+.central-ia__secao > summary:focus-visible {
+  outline: 2px solid #73951c;
+  outline-offset: 2px;
+}
+
+.central-ia__conteudo {
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .central-ia {
+    gap: 10px;
+  }
+
+  .central-ia__secao > summary {
+    padding: 12px;
+    font-size: 13px;
+  }
+
+  .central-ia__conteudo {
+    padding: 8px;
+  }
+}
